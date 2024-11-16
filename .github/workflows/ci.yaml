@@ -22,7 +22,7 @@ jobs:
         run: zig build test
 
       - name: Build Zli
-        run: zig build zli
+        run: zig build
 
   release:
     needs: test
