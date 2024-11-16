@@ -7,14 +7,14 @@ pub fn build(b: *std.Build) void {
     // Create the Zli library
     const lib = b.addStaticLibrary(.{
         .name = "zli",
-        .root_source_file = .{ .src_path = "src/root.zig" },
+        .root_source_file = .{ .path = "src/root.zig" },
         .target = target,
         .optimize = optimize,
     });
 
     // Create module for other projects to import
     const zli_module = b.addModule("zli", .{
-        .root_source_file = . { .src_path = "src/root.zig" },
+        .root_source_file = . { .path = "src/root.zig" },
     });
 
     // Install the library
@@ -25,7 +25,7 @@ pub fn build(b: *std.Build) void {
 
     // Create tests
     const main_tests = b.addTest(.{
-        .root_source_file = . { .src_path = "src/root.zig" },
+        .root_source_file = . { .path = "src/root.zig" },
         .target = target,
         .optimize = optimize,
     });
