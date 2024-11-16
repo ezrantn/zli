@@ -4,17 +4,19 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const dest_path: []const u8 = "src/root.zig";
+
     // Create the Zli library
     const lib = b.addStaticLibrary(.{
         .name = "zli",
-        .root_source_file = .{ .path = "src/root.zig" },
+        .root_source_file = .{ .src_path = dest_path },
         .target = target,
         .optimize = optimize,
     });
 
     // Create module for other projects to import
     const zli_module = b.addModule("zli", .{
-        .root_source_file = . { .path = "src/root.zig" },
+        .root_source_file = .{ .src_path = dest_path },
     });
 
     // Install the library
@@ -25,7 +27,7 @@ pub fn build(b: *std.Build) void {
 
     // Create tests
     const main_tests = b.addTest(.{
-        .root_source_file = . { .path = "src/root.zig" },
+        .root_source_file = .{ .src_path = dest_path },
         .target = target,
         .optimize = optimize,
     });
