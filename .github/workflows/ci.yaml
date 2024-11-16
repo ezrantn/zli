@@ -1,0 +1,94 @@
+name: Zli CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: master
+
+      - name: Run Tests
+        run: zig build test
+
+      - name: Build Example
+        run: zig build example
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: master
+
+      - name: Get Version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ steps.get_version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+
+      - name: Generate Package Hash
+        id: hash
+        run: |
+          HASH=$(curl -sL https://github.com/${{ github.repository }}/archive/refs/tags/${{ steps.get_version.outputs.VERSION }}.tar.gz | sha256sum | cut -d ' ' -f 1)
+          echo "HASH=${HASH}" >> $GITHUB_OUTPUT
+
+      - name: Update Release Description
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const hash = "${{ steps.hash.outputs.HASH }}";
+            const version = "${{ steps.get_version.outputs.VERSION }}";
+            
+            const releaseBody = `## Installation
+
+            \`\`\`zig
+            .{
+                .name = "your-project",
+                .version = "${version}",
+                .dependencies = .{
+                    .zli = .{
+                        .url = "https://github.com/${{ github.repository }}/archive/refs/tags/${version}.tar.gz",
+                        .hash = "${hash}",
+                    },
+                },
+            }
+            \`\`\``;
+                        
+                  await github.rest.repos.updateRelease({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    release_id: ${{
+                        steps.create_release.outputs.id
+                    }},
+                    body: releaseBody
+                });
+        env:
+          HASH: ${{ steps.hash.outputs.HASH }}
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
