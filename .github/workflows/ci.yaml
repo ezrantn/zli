@@ -21,8 +21,8 @@ jobs:
       - name: Run Tests
         run: zig build test
 
-      - name: Build Example
-        run: zig build example
+      - name: Build Zli
+        run: zig build zli
 
   release:
     needs: test
